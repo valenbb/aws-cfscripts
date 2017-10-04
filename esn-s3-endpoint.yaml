@@ -1,0 +1,29 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: Endpoint to S3 for private subnets'
+Paramters:
+  RouteTableId:
+    Description: Existing private route table(s)
+    Type: string
+    Default: 'rtb-45ed0a3f'
+  VPCID:
+    Description: VPC Id
+    Type: string
+    Default: 'vpc-0e628976'
+Resources:
+  EndpointS3:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      RouteTableIds: 
+        - !Ref 'RouteTableId'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcId: !Ref 'VPCID'
+Outputs:
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  Endpoint:
+    Description: 'The VPC endpoint to S3.'
+    Value: !Ref EndpointS3
+    Export:
+      Name: !Sub '${AWS::StackName}-EndpointS3'
