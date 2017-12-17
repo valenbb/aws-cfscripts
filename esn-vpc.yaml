@@ -1,25 +1,41 @@
 ---
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "ESN VPC: private and public subnets in 3AZs"
+Description: "ESN Xingfu VPC"
+Mappings:
+  RegionSettings:
+    us-east-1:
+      domainName: "esn.local"
 Resources:
+    DHCPOptions:
+      Type: AWS::EC2::DHCPOptions
+      Properties:
+        DomainName: !FindInMap [RegionSettings, !Ref "AWS::Region", "domainName"]
+        DomainNameServers:
+          - AmazonProvidedDNS
+        Tags:
+          - Key: name
+            Value: Cloudformation_ESN_VPC
     VPC:
-        Type: AWS::EC2::VPC
-        Properties:
-            CidrBlock: 10.0.0.0/16
-            EnableDnsSupport: true
-            EnableDnsHostnames: true
-            InstanceTenancy: default
-            Tags:
-              - Key: Name
-                Value: Cloudformation_ESN_VPC
-
+    Type: AWS::EC2::VPC
+    Properties:
+        CidrBlock: 10.0.0.0/16
+        EnableDnsSupport: true
+        EnableDnsHostnames: true
+        InstanceTenancy: default
+        Tags:
+          - Key: Name
+            Value: Cloudformation_ESN_VPC
+    DhcpVpcAssociation:
+      Type: AWS::EC2::VPCDHCPOptionsAssociation
+      Properties:
+        DhcpOptionsId: !Ref DHCPOptions
+        VpcId: !Ref VPC
     InternetGateway:
         Type: AWS::EC2::InternetGateway
         Properties:
             Tags:
               - Key: Name
                 Value: ESN_Internet_Gateway
-
     AttachGateway:
         Type: AWS::EC2::VPCGatewayAttachment
         Properties:
@@ -27,7 +43,6 @@ Resources:
                 Ref: VPC
             InternetGatewayId:
                 Ref: InternetGateway
-
     PrivateSubnetA:
         Type: AWS::EC2::Subnet
         Properties:
@@ -39,7 +54,6 @@ Resources:
             Tags:
               - Key: Name
                 Value: ESN_private_subnet_a
-
     PublicSubnetA:
         Type: AWS::EC2::Subnet
         Properties:
@@ -51,7 +65,6 @@ Resources:
             Tags:
               - Key: Name
                 Value: ESN_public_subnet_a
-
     PrivateSubnetB:
         Type: AWS::EC2::Subnet
         Properties:
@@ -63,7 +76,6 @@ Resources:
             Tags:
               - Key: Name
                 Value: ESN_private_subnet_b
-    
     PublicSubnetB:
         Type: AWS::EC2::Subnet
         Properties:
@@ -75,7 +87,6 @@ Resources:
             Tags:
               - Key: Name
                 Value: ESN_public_subnet_b
-
     PrivateSubnetC:
         Type: AWS::EC2::Subnet
         Properties:
@@ -87,7 +98,7 @@ Resources:
             Tags:
               - Key: Name
                 Value: ESN_private_subnet_c
-    
+
     PublicSubnetC:
         Type: AWS::EC2::Subnet
         Properties:
@@ -99,7 +110,6 @@ Resources:
             Tags:
               - Key: Name
                 Value: ESN_public_subnet_c
-
     RouteTablePrivate:
         Type: AWS::EC2::RouteTable
         Properties:
@@ -107,7 +117,6 @@ Resources:
             Tags:
             - Key: Name
               Value: ESN_Private_Route_Table
-
     RouteTablePublic:
         Type: AWS::EC2::RouteTable
         Properties:
@@ -115,7 +124,6 @@ Resources:
             Tags:
             - Key: Name
               Value: ESN_Public_Route_Table
-
     RouteTablePublicInternetRoute:
         Type: AWS::EC2::Route
         DependsOn: AttachGateway
@@ -123,7 +131,6 @@ Resources:
             DestinationCidrBlock: 0.0.0.0/0
             GatewayId: !Ref InternetGateway
             RouteTableId: !Ref RouteTablePublic
-
     NetworkAclPublic:
         Type: 'AWS::EC2::NetworkAcl'
         Properties:
@@ -131,7 +138,6 @@ Resources:
             Tags:
             - Key: Name
               Value: Public
-
     NetworkAclPrivate:
         Type: 'AWS::EC2::NetworkAcl'
         Properties:
@@ -139,79 +145,66 @@ Resources:
             Tags:
             - Key: Name
               Value: Private
-
     RouteTableAssociationAPrivate:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
             RouteTableId: !Ref RouteTablePrivate
             SubnetId: !Ref PrivateSubnetA
-    
     RouteTableAssociationAPublic:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
             RouteTableId: !Ref RouteTablePublic
             SubnetId: !Ref PublicSubnetA
-
     RouteTableAssociationBPrivate:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
             RouteTableId: !Ref RouteTablePrivate
             SubnetId: !Ref PrivateSubnetB
-    
     RouteTableAssociationBPublic:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
             RouteTableId: !Ref RouteTablePublic
             SubnetId: !Ref PublicSubnetB
-
     RouteTableAssociationCPrivate:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
             RouteTableId: !Ref RouteTablePrivate
             SubnetId: !Ref PrivateSubnetC
-
     RouteTableAssociationCPublic:
         Type: AWS::EC2::SubnetRouteTableAssociation
         Properties:
             RouteTableId: !Ref RouteTablePublic
             SubnetId: !Ref PublicSubnetC
-
     SubnetNetworkAclAssociationAPublic:
         Type: 'AWS::EC2::SubnetNetworkAclAssociation'
         Properties:
             SubnetId: !Ref PublicSubnetA
             NetworkAclId: !Ref NetworkAclPublic
-    
     SubnetNetworkAclAssociationAPrivate:
         Type: 'AWS::EC2::SubnetNetworkAclAssociation'
         Properties:
             SubnetId: !Ref PrivateSubnetA
             NetworkAclId: !Ref NetworkAclPrivate
-  
     SubnetNetworkAclAssociationBPublic:
         Type: 'AWS::EC2::SubnetNetworkAclAssociation'
         Properties:
             SubnetId: !Ref PublicSubnetB
             NetworkAclId: !Ref NetworkAclPublic
-    
     SubnetNetworkAclAssociationBPrivate:
         Type: 'AWS::EC2::SubnetNetworkAclAssociation'
         Properties:
             SubnetId: !Ref PrivateSubnetB
             NetworkAclId: !Ref NetworkAclPrivate
-  
     SubnetNetworkAclAssociationCPublic:
         Type: 'AWS::EC2::SubnetNetworkAclAssociation'
         Properties:
             SubnetId: !Ref PublicSubnetC
             NetworkAclId: !Ref NetworkAclPublic
-
     SubnetNetworkAclAssociationCPrivate:
         Type: 'AWS::EC2::SubnetNetworkAclAssociation'
         Properties:
             SubnetId: !Ref PrivateSubnetC
             NetworkAclId: !Ref NetworkAclPrivate
-
     NetworkAclEntryInPublicAllowAll:
         Type: 'AWS::EC2::NetworkAclEntry'
         Properties:
@@ -221,7 +214,6 @@ Resources:
             RuleAction: allow
             Egress: false
             CidrBlock: '0.0.0.0/0'
-  
     NetworkAclEntryOutPublicAllowAll:
         Type: 'AWS::EC2::NetworkAclEntry'
         Properties:
@@ -231,7 +223,6 @@ Resources:
             RuleAction: allow
             Egress: true
             CidrBlock: '0.0.0.0/0'
-  
     NetworkAclEntryInPrivateAllowVPC:
         Type: 'AWS::EC2::NetworkAclEntry'
         Properties:
@@ -241,7 +232,6 @@ Resources:
             RuleAction: allow
             Egress: false
             CidrBlock: '0.0.0.0/0'
-  
     NetworkAclEntryOutPrivateAllowVPC:
         Type: 'AWS::EC2::NetworkAclEntry'
         Properties:
@@ -251,7 +241,6 @@ Resources:
             RuleAction: allow
             Egress: true
             CidrBlock: '0.0.0.0/0'
-
 Outputs:
   StackName:
     Description: 'Stack name'
