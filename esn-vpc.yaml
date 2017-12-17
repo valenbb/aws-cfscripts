@@ -16,8 +16,8 @@ Resources:
           - Key: name
             Value: Cloudformation_ESN_VPC
     VPC:
-    Type: AWS::EC2::VPC
-    Properties:
+      Type: AWS::EC2::VPC
+      Properties:
         CidrBlock: 10.0.0.0/16
         EnableDnsSupport: true
         EnableDnsHostnames: true
@@ -98,7 +98,6 @@ Resources:
             Tags:
               - Key: Name
                 Value: ESN_private_subnet_c
-
     PublicSubnetC:
         Type: AWS::EC2::Subnet
         Properties:
@@ -241,6 +240,17 @@ Resources:
             RuleAction: allow
             Egress: true
             CidrBlock: '0.0.0.0/0'
+    EndpointS3:
+      Type: 'AWS::EC2::VPCEndpoint'
+      Properties:
+        RouteTableIds:
+          - !Ref RouteTablePrivate
+        ServiceName: !Join
+          - ''
+          - - com.amazonaws
+          - !Ref 'AWS::Region'
+          - .s3
+        VpcId: !Ref VPC
 Outputs:
   StackName:
     Description: 'Stack name'
@@ -285,3 +295,8 @@ Outputs:
     Value: !Ref PrivateSubnetC
     Export:
       Name: !Sub '${AWS::StackName}-PrivateSubnetC'
+  Endpoint:
+    Description: 'The VPC endpoint to S3.'
+    Value: !Ref EndpointS3
+    Export:
+      Name: !Sub '${AWS::StackName}-EndpointS3'
